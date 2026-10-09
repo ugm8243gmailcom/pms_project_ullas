@@ -4,14 +4,18 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
 
-# Load variables from the .env.local file
+# Load variables from .env.local and .env files
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local"))
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
-MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("DB_NAME", "project_management_system")
+MONGO_URI = os.getenv("MONGO_URI") or "mongodb://localhost:27017"
+DB_NAME = os.getenv("DB_NAME") or "project_management_system"
 
-# Initialize the client globally so it can be reused across connections
-client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
+client_kwargs = {}
+if "mongodb+srv://" in MONGO_URI or "tls=true" in MONGO_URI.lower() or "ssl=true" in MONGO_URI.lower():
+    client_kwargs["tlsCAFile"] = certifi.where()
+
+client = AsyncIOMotorClient(MONGO_URI, **client_kwargs)
 db = client[DB_NAME]
 
 def get_db():
