@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WAYMARK PMS Authentication Technical Guide</title>
+<style>
+  @page {
+    margin: 18mm 16mm 18mm 16mm;
+    size: A4;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: #1e293b;
+    font-size: 13px;
+    padding: 0;
+    margin: 0;
+  }
+  h1 {
+    color: #0f172a;
+    font-size: 24px;
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 8px;
+    margin-top: 24px;
+    page-break-after: avoid;
+  }
+  h2 {
+    color: #0369a1;
+    font-size: 18px;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-top: 22px;
+    page-break-after: avoid;
+  }
+  h3 {
+    color: #0f172a;
+    font-size: 15px;
+    margin-top: 16px;
+    page-break-after: avoid;
+  }
+  h4 {
+    color: #334155;
+    font-size: 13px;
+    margin-top: 12px;
+    page-break-after: avoid;
+  }
+  p {
+    margin: 8px 0;
+    text-align: justify;
+  }
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    border: 1px solid #e2e8f0;
+  }
+  pre {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 11px;
+    line-height: 1.45;
+    page-break-inside: avoid;
+  }
+  pre code {
+    background: transparent;
+    color: #f8fafc;
+    border: none;
+    padding: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 11.5px;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 10px;
+    text-align: left;
+  }
+  th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  tr:nth-child(even) {
+    background: #f8fafc;
+  }
+  blockquote {
+    border-left: 4px solid #0284c7;
+    margin: 10px 0;
+    padding: 6px 12px;
+    background: #f0f9ff;
+    color: #0369a1;
+    font-style: italic;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 20px 0;
+  }
+  ul, ol {
+    margin: 6px 0;
+    padding-left: 24px;
+  }
+  li {
+    margin: 3px 0;
+  }
+  a {
+    color: #0284c7;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+<h1>WAYMARK PMS — Complete Authentication & Role-Based Dashboard Access Technical Guide</h1>
+<blockquote><strong>Author</strong>: Senior Backend Engineer & Software Architect  </blockquote>
+<blockquote><strong>Target Audience</strong>: Full-Stack Developers, Security Auditors, and Computer Science Students  </blockquote>
+<blockquote><strong>Project</strong>: WAYMARK Multi-Tenant Project Management System (PMS)  </blockquote>
+<blockquote><strong>Repository Base</strong>: <code>c:\Users\User\Desktop\pmsauth</code>  </blockquote>
+<blockquote><strong>Status</strong>: Verified against Active Codebase (Git Branch: <code>feature/auth</code>)  </blockquote>
+<hr />
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#1-executive-summary--architecture-blueprint">Executive Summary & Architecture Blueprint</a></li>
+<li><a href="#phase-1-codebase-reality-inspection">Phase 1: Codebase Reality Inspection</a></li>
+<li><a href="#phase-2-end-to-end-login-lifecycle-chronological-trace">Phase 2: End-to-End Login Lifecycle (Chronological Trace)</a></li>
+<li><a href="#phase-3-file-by-file-technical-deep-dive">Phase 3: File-by-File Technical Deep Dive</a></li>
+<li><a href="#phase-4-core-engineering-concepts-illustrated-by-real-code">Phase 4: Core Engineering Concepts Illustrated by Real Code</a></li>
+<li><a href="#phase-5-role-based-access-control-rbac--perimeter-analysis">Phase 5: Role-Based Access Control (RBAC) & Perimeter Analysis</a></li>
+<li><a href="#phase-6-security-and-architecture-audit">Phase 6: Security and Architecture Audit</a></li>
+<li><a href="#phase-7-comprehensive-troubleshooting--debugging-runbook">Phase 7: Comprehensive Troubleshooting & Debugging Runbook</a></li>
+<li><a href="#phase-8-student--junior-engineer-learning-companion">Phase 8: Student & Junior Engineer Learning Companion</a></li>
+<li><a href="#task-2-guidance-github-fork-push--pull-request-workflow">Task 2 Guidance: GitHub Fork, Push & Pull Request Workflow</a></li>
+</ol>
+<hr />
+<h2>1. Executive Summary & Architecture Blueprint</h2>
+<p>The WAYMARK Project Management System provides a multi-tenant, role-segregated platform for corporate software engineering teams. Access control is divided into three distinct organizational tiers:</p>
+<ol>
+<li><strong>Administrator (Workspace Owner)</strong>: Configures global workspace settings, registers staff, oversees all database collections, and monitors 24-hour auto-purged terminal audit logs.</li>
+<li><strong>Project Manager (Head of Projects)</strong>: Creates project delivery roadmaps, configures Kanban workflow columns, balances engineering workload, and approves deliverables.</li>
+<li><strong>Employee (Staff Engineer)</strong>: Works through prioritized task backlogs, submits Pull Request / Dockerfile deliverables for approval, and schedules collaboration meetings.</li>
+</ol>
+<h3>High-Level Topology</h3>
+<pre><code class="language-">+---------------------------------------------------------------------------------------+
+|                                    CLIENT BROWSER                                     |
+|                                                                                       |
+|   React 19 Single Page App (SPA)  &lt;---------&gt;  React Context (AuthContext)            |
+|   - Login.jsx Form UI                          - Token in localStorage                |
+|   - ProtectedRoute Guard                       - Sanitized User in localStorage       |
+|   - DynamicDashboard Dispatcher                - Client-side Permission Cache         |
++---------------------------------------------------------------------------------------+
+                                          |
+               HTTP Requests: Bearer JWT  |  Proxy: /api -&gt; :8000
+                                          v
++---------------------------------------------------------------------------------------+
+|                                  LOCAL DEV REVERSE PROXY                              |
+|                              Vite 8.3 Dev Server (Port 5173)                          |
++---------------------------------------------------------------------------------------+
+                                          |
+               Reverse Proxied HTTP       |  http://127.0.0.1:8000/api/v1
+                                          v
++---------------------------------------------------------------------------------------+
+|                                 FASTAPI APPLICATION CORE                              |
+|                                Uvicorn ASGI Server (:8000)                            |
+|                                                                                       |
+|  [CORSMiddleware] -&gt; [SystemLogMiddleware] -&gt; [FastAPI Router Engine]                 |
+|                                                        |                              |
+|         +----------------------------------------------+                              |
+|         v                                              v                              |
+|   v1_auth.py (/api/v1/auth)                     v1_rbac.py (/api/v1/rbac)             |
+|   - POST /login (Bcrypt + JWT Issue)            - GET /my-permissions                 |
+|   - GET  /me    (Token Hydration)               - GET /staff (Admin Invisibility)     |
+|   - POST /logout (Session Revoke)               - GET /roles &amp; /permissions           |
++---------------------------------------------------------------------------------------+
+            |                                                    |
+   Async Motor Driver                                   Async Motor Driver
+   mongodb://localhost:27017                            mongodb://localhost:27017
+            v                                                    v
++---------------------------------------------------------------------------------------+
+|                                  DATABASE LAYER (MONGODB)                             |
+|                                     Database: `pms_db`                                |
+|                                                                                       |
+|   Collections:                                                                        |
+|   - `users`: User profiles, bcrypt hashes, roles, employee IDs, verification flags    |
+|   - `organizations`: Multi-tenant organization records, plans, activation flags       |
+|   - `roles`: Tenant role definitions                                                  |
+|   - `permissions`: Granular action keys (e.g. project:create, task:submit)            |
+|   - `role_permissions`: Mapping tables between role IDs and permission IDs            |
+|   - `system_logs`: Real-time HTTP audit records (TTL auto-purged after 24 hours)       |
++---------------------------------------------------------------------------------------+</code></pre>
+<hr />
+<h2>Phase 1: Codebase Reality Inspection</h2>
+<p>Every statement in this report has been verified against the physical source code on disk.</p>
+<h3>1.1 Technical Stack Inventory</h3>
+<table>
+<thead>
+<tr><th>Component</th><th>Physical Technology</th><th>Specific Version in Project</th><th>Evidence Source</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Frontend Framework</strong></td><td>React (SPA)</td><td><code>^19.2.8</code></td><td><code>pms_frontend/package.json</code></td></tr>
+<tr><td><strong>Frontend Tooling</strong></td><td>Vite</td><td><code>^8.3.0</code></td><td><code>pms_frontend/package.json</code></td></tr>
+<tr><td><strong>Client Router</strong></td><td>React Router DOM</td><td><code>^7.18.3</code></td><td><code>pms_frontend/package.json</code></td></tr>
+<tr><td><strong>Frontend Styling</strong></td><td>Tailwind CSS v4 + Liquid Glassmorphism</td><td><code>@tailwindcss/vite ^4.3.3</code></td><td><code>pms_frontend/src/index.css</code></td></tr>
+<tr><td><strong>Backend Framework</strong></td><td>FastAPI (Python ASGI)</td><td>Python 3.14.6 + FastAPI 0.115+</td><td><code>pms_backend/venv/pyvenv.cfg</code></td></tr>
+<tr><td><strong>ASGI Server</strong></td><td>Uvicorn</td><td><code>uvicorn[standard]</code></td><td><code>pms_backend/requirements.txt</code></td></tr>
+<tr><td><strong>Database Engine</strong></td><td>MongoDB Community Server</td><td>Local port <code>27017</code></td><td>Windows Service <code>MongoDB</code></td></tr>
+<tr><td><strong>Database Driver</strong></td><td>Motor (AsyncIO MongoDB Driver)</td><td><code>motor</code> (coroutine-based)</td><td><code>pms_backend/core/database.py</code></td></tr>
+<tr><td><strong>Password Hashing</strong></td><td>Bcrypt (Blowfish-based key derivation)</td><td><code>bcrypt</code> (12 salt rounds)</td><td><code>pms_backend/core/security.py</code></td></tr>
+<tr><td><strong>Token Standard</strong></td><td>Signed JSON Web Tokens (PyJWT)</td><td><code>pyjwt</code> with HMAC-SHA256 (<code>HS256</code>)</td><td><code>pms_backend/core/security.py</code></td></tr>
+</tbody>
+</table>
+<h3>1.2 Database Technology & Connection Topology</h3>
+<p>Connection parameters are defined in <code>pms_backend/core/database.py</code>:</p>
+<ul>
+<li><strong>Driver</strong>: <code>motor.motor_asyncio.AsyncIOMotorClient</code>.</li>
+<li><strong>Connection URI</strong>: Loaded via <code>os.getenv("MONGO_URI")</code> with default fallback to <code>"mongodb://localhost:27017"</code>.</li>
+<li><strong>Database Name</strong>: Loaded via <code>os.getenv("DB_NAME")</code> with fallback to <code>"project_management_system"</code>. The active <code>.env</code> file explicitly configures <code>DB_NAME=pms_db</code>.</li>
+<li><strong>SSL/TLS Handling</strong>: If the URI contains <code>mongodb+srv://</code>, <code>tls=true</code>, or <code>ssl=true</code>, <code>certifi.where()</code> is supplied via <code>client_kwargs["tlsCAFile"]</code>.</li>
+<li><strong>Dependency Injection</strong>: <code>get_db()</code> returns the active Motor database handle <code>db</code>.</li>
+<li><strong>Database Lifespan</strong>: <code>init_db()</code> is called inside <code>main.py</code>'s <code>@asynccontextmanager def lifespan(app: FastAPI)</code> hook, ensuring indexes are built prior to servicing incoming HTTP requests.</li>
+</ul>
+<h3>1.3 User Schema & Physical Document Structure</h3>
+<p>User documents reside in the MongoDB <code>users</code> collection. A physical document stored in <code>pms_db.users</code> contains the following fields:</p>
+<pre><code class="language-json">{
+  "_id": {"$oid": "60549730faee4d50bc96e7ba"},
+  "id": "60549730-faee-4d50-bc96-e7ba4147d047",
+  "organizationId": "org-demo-1234",
+  "email": "admin@waymark.com",
+  "name": "Alex Rivera (Admin)",
+  "role": "admin",
+  "employeeId": "EMP-1000",
+  "position": "Workspace Owner / Administrator",
+  "passwordHash": "$2b$12$KIXeWq1i9y...",
+  "otp": "839201",
+  "isVerified": true,
+  "isActive": true,
+  "avatarUrl": "https://...",
+  "createdAt": "2026-10-26T06:05:39.123Z"
+}</code></pre>
+<h4>Field Responsibilities</h4>
+<ul>
+<li><code>_id</code>: Native MongoDB BSON ObjectId. Stripped prior to JSON responses via <code>user.pop("_id", None)</code>.</li>
+<li><code>id</code>: Canonical UUIDv4 string generated on user registration. Used as the foreign key in JWT claims (<code>sub</code>, <code>userId</code>), tasks, and audit logs.</li>
+<li><code>organizationId</code>: UUIDv4 string referencing <code>organizations.id</code>. Enforces multi-tenant data partitioning.</li>
+<li><code>email</code>: Normalized, lowercased user email address used as the primary login identifier.</li>
+<li><code>name</code>: User's full display name.</li>
+<li><code>role</code>: Canonical access string (<code>admin</code>, <code>project_manager</code>, <code>employee</code>, <code>owner</code>, <code>member</code>, <code>guest</code>).</li>
+<li><code>employeeId</code>: Sequential identifier (e.g., <code>EMP-1001</code>) used for organizational HR tracking.</li>
+<li><code>position</code>: Job title (e.g., "Lead PM", "Full Stack Engineer").</li>
+<li><code>passwordHash</code>: Salted 60-character Bcrypt hash. Never returned across any API endpoint.</li>
+<li><code>otp</code>: Ephemeral 6-digit verification code generated during workspace registration.</li>
+<li><code>isVerified</code>: Boolean flag. <code>false</code> prevents login until the 6-digit OTP code is confirmed.</li>
+<li><code>isActive</code>: Boolean flag. <code>false</code> indicates administrative deactivation.</li>
+<li><code>createdAt</code>: UTC datetime timestamp.</li>
+</ul>
+<hr />
+<h2>Phase 2: End-to-End Login Lifecycle (Chronological Trace)</h2>
+<p>The following sequence details every operation executed when an operator signs into WAYMARK.</p>
+<pre><code class="language-mermaid">sequenceDiagram
+    autonumber
+    actor User as Operator / Browser
+    participant UI as Login.jsx (React)
+    participant API as api.js (Client Layer)
+    participant Proxy as Vite Proxy (:5173)
+    participant FastAPI as main.py &amp; v1_auth.py (:8000)
+    participant Security as core/security.py
+    participant DB as MongoDB (pms_db.users)
+    participant AuthCtx as AuthContext.jsx
+    participant Router as App.jsx (ProtectedRoute)
+    participant Dash as Admin/PM/Employee Dashboard
+
+    User-&gt;&gt;UI: Types email &amp; password (or clicks demo button)
+    User-&gt;&gt;UI: Submits Form ("Sign In to Workspace")
+    UI-&gt;&gt;UI: handleLogin() sets loading=true, clears errors
+    UI-&gt;&gt;API: authApi.login({ email, password })
+    API-&gt;&gt;Proxy: POST /api/v1/auth/login (JSON Body)
+    Proxy-&gt;&gt;FastAPI: Forwards to http://127.0.0.1:8000/api/v1/auth/login
+    FastAPI-&gt;&gt;FastAPI: SystemLogMiddleware intercepts request &amp; starts timer
+    FastAPI-&gt;&gt;FastAPI: Pydantic validates LoginRequest(email, password)
+    FastAPI-&gt;&gt;DB: db["users"].find_one({"email": clean_email})
+    DB--&gt;&gt;FastAPI: Returns User Document (with passwordHash)
+    
+    alt User Not Found or Password Mismatch
+        FastAPI-&gt;&gt;Security: verify_password(plain, passwordHash)
+        Security--&gt;&gt;FastAPI: returns False
+        FastAPI--&gt;&gt;Proxy: HTTP 401 Unauthorized {"detail": "Invalid email or password."}
+        Proxy--&gt;&gt;API: 401 Response
+        API--&gt;&gt;UI: Throws Error("Invalid email or password.")
+        UI-&gt;&gt;User: Displays red banner error
+    else User Found &amp; Password Valid
+        FastAPI-&gt;&gt;Security: verify_password(plain, passwordHash)
+        Security--&gt;&gt;FastAPI: returns True
+        FastAPI-&gt;&gt;FastAPI: Checks isVerified (403 if False) &amp; isActive (403 if False)
+        FastAPI-&gt;&gt;DB: db["organizations"].find_one({"id": org_id})
+        DB--&gt;&gt;FastAPI: Returns Organization Document (for workspace name)
+        FastAPI-&gt;&gt;Security: normalize_role(user.role)
+        FastAPI-&gt;&gt;Security: create_access_token(token_payload)
+        Security--&gt;&gt;FastAPI: Returns signed JWT string (HS256)
+        FastAPI--&gt;&gt;Proxy: HTTP 200 OK { accessToken, tokenType, user: {...} }
+        Proxy--&gt;&gt;API: Passes 200 OK JSON
+        API--&gt;&gt;UI: Resolves Promise with authentication payload
+        UI-&gt;&gt;AuthCtx: login(authData)
+        AuthCtx-&gt;&gt;AuthCtx: localStorage.setItem('token', token)
+        AuthCtx-&gt;&gt;AuthCtx: localStorage.setItem('user', JSON.stringify(user))
+        AuthCtx-&gt;&gt;AuthCtx: Updates state: setToken(token), setUser(user)
+        AuthCtx-&gt;&gt;API: Background fetchMyPermissions() &amp; fetchUnreadNotifications()
+        UI-&gt;&gt;Router: navigate('/dashboard', { replace: true })
+        Router-&gt;&gt;Router: ProtectedRoute checks token &amp; user state
+        Router-&gt;&gt;Router: DynamicDashboard evaluates user.role
+        alt role == 'admin' or 'owner'
+            Router-&gt;&gt;Dash: Mounts &lt;AdminDashboard /&gt;
+        else role == 'project_manager'
+            Router-&gt;&gt;Dash: Mounts &lt;ManagerDashboard /&gt;
+        else role == 'employee'
+            Router-&gt;&gt;Dash: Mounts &lt;EmployeeDashboard /&gt;
+        end
+        Dash-&gt;&gt;User: Renders live metrics, tasks, and role-scoped navigation
+    end</code></pre>
+<h3>Detailed Chronological Step Breakdown</h3>
+<h4>Step 1: User Initiation & UI Form State</h4>
+<ul>
+<li><strong>Trigger</strong>: The user accesses <code>http://localhost:5173/login</code>.</li>
+<li><strong>Executing Component</strong>: <code>pms_frontend/src/pages/Login.jsx</code>.</li>
+<li><strong>Data in</strong>: User enters credentials or clicks a demo card (<code>fillDemoCredentials('admin')</code>).</li>
+<li><strong>Processing</strong>: Component updates internal React state variables <code>email</code> and <code>password</code>.</li>
+<li><strong>Database/Network Action</strong>: None.</li>
+</ul>
+<h4>Step 2: Form Submission & Validation</h4>
+<ul>
+<li><strong>Trigger</strong>: User clicks "Sign In to Workspace" or presses Enter within the form.</li>
+<li><strong>Executing Function</strong>: <code>handleLogin(e)</code> in <code>Login.jsx</code>.</li>
+<li><strong>Data in</strong>: Synthetic Form Event <code>e</code>.</li>
+<li><strong>Processing</strong>: Calls <code>e.preventDefault()</code> to stop native browser page reload. Sets <code>loading(true)</code> and <code>error(null)</code>.</li>
+<li><strong>Next Step</strong>: Invokes <code>authApi.login({ email, password })</code>.</li>
+</ul>
+<h4>Step 3: Network Dispatch Through Centralized API Client</h4>
+<ul>
+<li><strong>Trigger</strong>: Invocation of <code>authApi.login()</code>.</li>
+<li><strong>Executing File</strong>: <code>pms_frontend/src/services/api.js</code>.</li>
+<li><strong>Data in</strong>: Object <code>{ email: "admin@waymark.com", password: "Password123!" }</code>.</li>
+<li><strong>Processing</strong>: <code>apiCall('/auth/login', options)</code> inspects the endpoint:</li>
+<li>Assembles absolute URL: <code>${BASE_URL}/auth/login</code> (evaluates to <code>/api/v1/auth/login</code>).</li>
+<li>Sets HTTP Header: <code>Content-Type: application/json</code>.</li>
+<li>Serializes JavaScript object into JSON string via <code>JSON.stringify(body)</code>.</li>
+<li>Calls native browser <code>window.fetch()</code>.</li>
+</ul>
+<h4>Step 4: Vite Reverse Proxy Forwarding</h4>
+<ul>
+<li><strong>Trigger</strong>: Browser dispatches HTTP POST to origin <code>http://localhost:5173/api/v1/auth/login</code>.</li>
+<li><strong>Executing File</strong>: <code>pms_frontend/vite.config.js</code>.</li>
+<li><strong>Processing</strong>: The dev server inspects matching rules:</li>
+</ul>
+<pre><code class="language-javascript">  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true
+      }
+    }
+  }</code></pre>
+<p>  Vite forwards the raw TCP stream directly to FastAPI on port 8000. This eliminates browser CORS preflight restrictions and cross-domain cookie/header blocks.</p>
+<h4>Step 5: Backend Request Ingestion & Middleware Execution</h4>
+<ul>
+<li><strong>Trigger</strong>: Inbound HTTP connection on port <code>8000</code>.</li>
+<li><strong>Executing File</strong>: <code>pms_backend/main.py</code>.</li>
+<li><strong>Processing</strong>:</li>
+<li><code>CORSMiddleware</code> validates that the origin (<code>http://localhost:5173</code>) matches <code>allow_origins</code> or <code>allow_origin_regex</code>.</li>
+<li><code>SystemLogMiddleware</code> records start time (<code>time.time()</code>), intercepts the call, and sets up post-request response duration logging into <code>pms_db.system_logs</code>.</li>
+<li>FastAPI matches the route URL <code>/api/v1/auth/login</code> to <code>v1_auth.py</code>.</li>
+</ul>
+<h4>Step 6: Pydantic Schema Validation</h4>
+<ul>
+<li><strong>Executing Function</strong>: <code>login(payload: LoginRequest, db = Depends(get_db))</code> in <code>pms_backend/api/routers/v1_auth.py</code>.</li>
+<li><strong>Data in</strong>: Inbound JSON payload parsed into <code>LoginRequest</code>:</li>
+</ul>
+<pre><code class="language-python">  class LoginRequest(BaseModel):
+      email: EmailStr
+      password: str = Field(..., min_length=1)</code></pre>
+<ul>
+<li><strong>Failure Condition</strong>: If email format is malformed or password is empty, FastAPI raises an automatic <code>422 Unprocessable Entity</code> validation error handled by <code>core.exceptions.validation_exception_handler</code>.</li>
+</ul>
+<h4>Step 7: Database User Lookup</h4>
+<ul>
+<li><strong>Executing File</strong>: <code>pms_backend/api/routers/v1_auth.py</code>.</li>
+<li><strong>Processing</strong>:</li>
+</ul>
+<pre><code class="language-python">  clean_email = payload.email.strip().lower()
+  user = await db["users"].find_one({"email": clean_email})</code></pre>
+<ul>
+<li><strong>Database Query</strong>: Asynchronous BSON query to MongoDB collection <code>users</code> targeting index <code>{"email": 1}</code>.</li>
+<li><strong>Data Returned</strong>: Complete MongoDB document containing <code>passwordHash</code>, <code>role</code>, <code>isVerified</code>, and <code>isActive</code>.</li>
+</ul>
+<h4>Step 8: Cryptographic Password Verification</h4>
+<ul>
+<li><strong>Executing File</strong>: <code>pms_backend/core/security.py</code>.</li>
+<li><strong>Executing Function</strong>: <code>verify_password(payload.password, user.get("passwordHash", ""))</code>.</li>
+<li><strong>Processing</strong>:</li>
+</ul>
+<pre><code class="language-python">  bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))</code></pre>
+<p>  Bcrypt extracts the 128-bit salt embedded in the stored modular crypt format string, runs the key derivation algorithm against the plain password, and compares output bytes in constant time.</p>
+<ul>
+<li><strong>Failure Condition</strong>: If <code>user</code> is <code>None</code> or <code>checkpw()</code> evaluates to <code>False</code>, the backend immediately raises:</li>
+</ul>
+<pre><code class="language-python">  raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid email or password.",
+      headers={"WWW-Authenticate": "Bearer"},
+  )</code></pre>
+<p>  <em>Security Note</em>: The error detail deliberately does not state whether the email or the password was the invalid component, guarding against account enumeration attacks.</p>
+<h4>Step 9: Account State Verification</h4>
+<ul>
+<li><strong>Executing File</strong>: <code>pms_backend/api/routers/v1_auth.py</code>.</li>
+<li><strong>Processing</strong>:</li>
+<li><strong>Email Verification Gate</strong>:</li>
+</ul>
+<pre><code class="language-python">    if not user.get("isVerified", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account not verified. Please verify your OTP to continue.",
+        )</code></pre>
+<ul>
+<li><strong>Deactivation Gate</strong>:</li>
+</ul>
+<pre><code class="language-python">    if not user.get("isActive", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been deactivated. Please contact your organization administrator.",
+        )</code></pre>
+<h4>Step 10: Multi-Tenant Context Resolution & Role Normalization</h4>
+<ul>
+<li><strong>Executing File</strong>: <code>pms_backend/api/routers/v1_auth.py</code> and <code>pms_backend/core/security.py</code>.</li>
+<li><strong>Processing</strong>:</li>
+<li>Resolves organization name: <code>org_doc = await db["organizations"].find_one({"id": org_id})</code>.</li>
+<li>Normalizes role string: <code>normalize_role(user.get("role", "employee"))</code> converts variants like <code>"Administrator"</code> or <code>"PM"</code> to canonical identifiers (<code>"admin"</code>, <code>"project_manager"</code>).</li>
+</ul>
+<h4>Step 11: Cryptographic JWT Minting</h4>
+<ul>
+<li><strong>Executing Function</strong>: <code>create_access_token(data=token_payload)</code> in <code>pms_backend/core/security.py</code>.</li>
+<li><strong>Processing</strong>:</li>
+<li>Claims Assembly:</li>
+</ul>
+<pre><code class="language-python">    token_payload = {
+        "userId": user["id"],
+        "sub": user["id"],
+        "organizationId": org_id or "",
+        "role": normalized_user_role,
+        "email": user["email"],
+        "name": user.get("name", ""),
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
+    }</code></pre>
+<ul>
+<li>Signature: <code>jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")</code>.</li>
+<li>Secret Key: Loaded from <code>os.getenv("JWT_SECRET")</code>.</li>
+</ul>
+<h4>Step 12: Backend HTTP 200 Response</h4>
+<ul>
+<li><strong>Returned Payload</strong>:</li>
+</ul>
+<pre><code class="language-json">  {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ...",
+    "tokenType": "bearer",
+    "user": {
+      "id": "60549730-faee-4d50-bc96-e7ba4147d047",
+      "name": "Alex Rivera (Admin)",
+      "email": "admin@waymark.com",
+      "role": "admin",
+      "organizationId": "org-demo-1234",
+      "organizationName": "Waymark Tech Corp",
+      "employeeId": "EMP-1000",
+      "position": "Workspace Owner / Administrator",
+      "avatarUrl": null
+    }
+  }</code></pre>
+<h4>Step 13: Client-Side State Hydration & Storage</h4>
+<ul>
+<li><strong>Executing Function</strong>: <code>login(authData)</code> in <code>pms_frontend/src/context/AuthContext.jsx</code>.</li>
+<li><strong>Processing</strong>:</li>
+<li>Extracts <code>accessToken = authData.accessToken</code>.</li>
+<li>Normalizes user role: <code>normalizeRoleName(rawUser.role)</code>.</li>
+<li>Persists session to browser storage:</li>
+</ul>
+<pre><code class="language-javascript">    localStorage.setItem('token', accessToken);
+    localStorage.setItem('user', JSON.stringify(normalizedUser));</code></pre>
+<ul>
+<li>Sets reactive state: <code>setToken(accessToken)</code>, <code>setUser(normalizedUser)</code>.</li>
+<li>Triggers non-blocking background synchronization:</li>
+<li><code>fetchMyPermissions()</code>: Issues <code>GET /api/v1/rbac/my-permissions</code>. For admins, yields <code>['*']</code>.</li>
+<li><code>fetchUnreadNotifications()</code>: Issues <code>GET /api/v1/notifications/unread-count</code>.</li>
+</ul>
+<h4>Step 14: Client Route Navigation</h4>
+<ul>
+<li><strong>Executing File</strong>: <code>pms_frontend/src/pages/Login.jsx</code>.</li>
+<li><strong>Processing</strong>: <code>navigate(destination, { replace: true })</code> runs, routing the browser history to <code>/dashboard</code>.</li>
+</ul>
+<h4>Step 15: Dynamic Dashboard Dispatch</h4>
+<ul>
+<li><strong>Executing File</strong>: <code>pms_frontend/src/App.jsx</code>.</li>
+<li><strong>Processing</strong>:</li>
+<li>Route <code>/dashboard</code> is protected:</li>
+</ul>
+<pre><code class="language-jsx">    &lt;Route path="/dashboard" element={&lt;ProtectedRoute&gt;&lt;DynamicDashboard /&gt;&lt;/ProtectedRoute&gt;} /&gt;</code></pre>
+<ul>
+<li><code>&lt;ProtectedRoute&gt;</code> verifies <code>user</code> and <code>token</code> are non-null.</li>
+<li><code>&lt;DynamicDashboard&gt;</code> inspects <code>user.role</code>:</li>
+<li><code>admin</code> or <code>owner</code> $\rightarrow$ Mounts <code>&lt;AdminDashboard /&gt;</code>.</li>
+<li><code>project_manager</code> $\rightarrow$ Mounts <code>&lt;ManagerDashboard /&gt;</code>.</li>
+<li><code>employee</code> $\rightarrow$ Mounts <code>&lt;EmployeeDashboard /&gt;</code>.</li>
+<li><strong>Result</strong>: The user views their role-specific dashboard with live database data.</li>
+</ul>
+<hr />
+<h2>Phase 3: File-by-File Technical Deep Dive</h2>
+<h3>3.1 <code>pms_frontend/src/pages/Login.jsx</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_frontend\src\pages\Login.jsx</code></li>
+<li><strong>Responsibility</strong>: Authenticated user interface. Renders the login card, registration form, OTP activation screen, and instant demo credentials buttons.</li>
+<li><strong>Key Imports</strong>:</li>
+<li><code>useAuth</code> from <code>../context/AuthContext</code>: Consumes the global authentication store.</li>
+<li><code>authApi</code> from <code>../services/api</code>: Network interface for login, signup, and OTP requests.</li>
+<li><code>useNavigate, useLocation</code> from <code>react-router-dom</code>: Controls client-side redirection.</li>
+</ul>
+<pre><code class="language-javascript">// Line 80-99 of Login.jsx
+const handleLogin = async (e) =&gt; {
+  e.preventDefault();
+  setError(null);
+  setSuccessMessage(null);
+
+  try {
+    setLoading(true);
+    const res = await authApi.login({ email, password });
+    login(res);
+    navigate(destination, { replace: true });
+  } catch (err) {
+    const msg = err.message || 'Login failed';
+    if (msg.toLowerCase().includes('not verified') || msg.toLowerCase().includes('otp')) {
+      setMode('verify_otp');
+      setError('Your administrator account is pending verification. Enter the 6-digit OTP code.');
+    } else {
+      setError(msg);
+    }
+  } finally {
+    setLoading(false);
+  }
+};</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>e.preventDefault()</code>: Stops standard HTML form submission which would otherwise refresh the page and dump application state.</li>
+<li><code>setError(null)</code>: Resets previous error states so stale alerts disappear.</li>
+<li><code>const res = await authApi.login(...)</code>: Halts execution until the server returns or rejects.</li>
+<li><code>login(res)</code>: Passes the response payload to React Context, storing credentials in <code>localStorage</code>.</li>
+<li><code>catch (err)</code>: Inspects error text. If the backend responded with HTTP 403 Unverified, automatically flips UI <code>mode</code> to <code>'verify_otp'</code>, displaying the 6-digit PIN input.</li>
+</ul>
+<hr />
+<h3>3.2 <code>pms_frontend/src/services/api.js</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_frontend\src\services\api.js</code></li>
+<li><strong>Responsibility</strong>: Centralized HTTP client wrapper. Manages base URL resolution, Bearer token injection, request header formatting, and standard error decoding.</li>
+</ul>
+<pre><code class="language-javascript">// Line 7-36 of api.js
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || (
+  import.meta.env.PROD 
+    ? 'https://proman-aura-backend-362935833196.asia-south1.run.app/api/v1' 
+    : '/api/v1'
+);
+
+export async function apiCall(endpoint, options = {}) {
+  const token = localStorage.getItem('token');
+  const isFormData = options.body instanceof FormData;
+  
+  const headers = {
+    ...(token &amp;&amp; { 'Authorization': `Bearer ${token}` }),
+    ...(!isFormData &amp;&amp; { 'Content-Type': 'application/json' }),
+    ...options.headers,
+  };
+
+  let body = options.body;
+  if (body &amp;&amp; !isFormData &amp;&amp; typeof body === 'object') {
+    body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+    body,
+  });</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>const BASE_URL</code>: In development, sets the root to <code>/api/v1</code> so Vite proxies requests locally. In production, points to the Cloud Run deployment.</li>
+<li><code>const token = localStorage.getItem('token')</code>: Inspects browser storage for an active JWT.</li>
+<li><code>...(token &amp;&amp; { 'Authorization': Bearer ${token} })</code>: Spread operator conditionally attaches the Bearer token to headers if present.</li>
+<li><code>body = JSON.stringify(body)</code>: Automatically serializes JavaScript objects to standard JSON text.</li>
+</ul>
+<hr />
+<h3>3.3 <code>pms_frontend/src/context/AuthContext.jsx</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_frontend\src\context\AuthContext.jsx</code></li>
+<li><strong>Responsibility</strong>: Global state engine for user identity, role permissions, and route guards.</li>
+<li><strong>Key Functions</strong>:</li>
+<li><code>AuthProvider</code>: React Context provider wrapping the application component tree.</li>
+<li><code>verifySession()</code>: Runs on initial page load; validates persisted tokens against <code>/api/v1/auth/me</code>.</li>
+<li><code>ProtectedRoute</code>: Higher-Order Component preventing unauthenticated access to restricted URLs.</li>
+</ul>
+<pre><code class="language-javascript">// Line 128-146 of AuthContext.jsx
+const login = (authData) =&gt; {
+  const accessToken = authData.accessToken || authData.access_token;
+  const rawUser = authData.user || {};
+  const normalizedUser = {
+    ...rawUser,
+    role: normalizeRoleName(rawUser.role),
+  };
+
+  localStorage.setItem('token', accessToken);
+  localStorage.setItem('user', JSON.stringify(normalizedUser));
+
+  setToken(accessToken);
+  setUser(normalizedUser);
+
+  fetchMyPermissions();
+  fetchUnreadNotifications();
+};</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>authData.accessToken</code>: Accommodates camelCase (<code>accessToken</code>) and snake_case (<code>access_token</code>) backend conventions.</li>
+<li><code>normalizeRoleName</code>: Sanitizes strings (e.g. converting "PM" or "project-manager" into "project_manager") to avoid broken permission checks.</li>
+<li><code>localStorage.setItem(...)</code>: Writes identity to client disk so the session survives page reloads.</li>
+<li><code>fetchMyPermissions()</code>: Asynchronously updates capability permissions from the database.</li>
+</ul>
+<hr />
+<h3>3.4 <code>pms_frontend/src/App.jsx</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_frontend\src\App.jsx</code></li>
+<li><strong>Responsibility</strong>: Top-level route definition, dynamic role branching, and application shell layout.</li>
+</ul>
+<pre><code class="language-javascript">// Line 21-32 of App.jsx
+const DynamicDashboard = () =&gt; {
+  const { user } = useAuth();
+  if (!user) return &lt;Navigate to="/login" replace /&gt;;
+
+  if (user.role === 'admin' || user.role === 'owner') {
+    return &lt;AdminDashboard /&gt;;
+  }
+  if (user.role === 'project_manager') {
+    return &lt;ManagerDashboard /&gt;;
+  }
+  return &lt;EmployeeDashboard /&gt;;
+};</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>const { user } = useAuth()</code>: Subscribes to the active user state.</li>
+<li><code>if (!user)</code>: Safety redirect back to <code>/login</code> if state is empty.</li>
+<li>Multi-tier <code>if</code> statements: Dispatches the exact component hierarchy matching the authenticated role.</li>
+</ul>
+<hr />
+<h3>3.5 <code>pms_backend/core/database.py</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_backend\core\database.py</code></li>
+<li><strong>Responsibility</strong>: Establishes the asynchronous Motor MongoDB client connection and initializes database collection indexes and Time-To-Live (TTL) expiration rules.</li>
+</ul>
+<pre><code class="language-python"># Line 11-19 of database.py
+MONGO_URI = os.getenv("MONGO_URI") or "mongodb://localhost:27017"
+DB_NAME = os.getenv("DB_NAME") or "project_management_system"
+
+client_kwargs = {}
+if "mongodb+srv://" in MONGO_URI or "tls=true" in MONGO_URI.lower():
+    client_kwargs["tlsCAFile"] = certifi.where()
+
+client = AsyncIOMotorClient(MONGO_URI, **client_kwargs)
+db = client[DB_NAME]</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>AsyncIOMotorClient</code>: Creates a non-blocking MongoDB connection pool integrated with Python's <code>asyncio</code> event loop.</li>
+<li><code>certifi.where()</code>: Supplies updated Mozilla CA root certificates when connecting to TLS-secured clusters (e.g., MongoDB Atlas).</li>
+<li><code>db = client[DB_NAME]</code>: Exposes the database handle to application routers.</li>
+</ul>
+<hr />
+<h3>3.6 <code>pms_backend/core/security.py</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_backend\core\security.py</code></li>
+<li><strong>Responsibility</strong>: Cryptographic hashing, verification, token generation, user hydration, and FastAPI RBAC dependency factories.</li>
+</ul>
+<pre><code class="language-python"># Line 33-56 of security.py
+def hash_password(password: str) -&gt; str:
+    if not password:
+        raise ValueError("Password cannot be empty.")
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+def verify_password(plain_password: str, hashed_password: str) -&gt; bool:
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8")
+        )
+    except Exception:
+        return False</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>bcrypt.gensalt(rounds=12)</code>: Generates a cryptographically strong 128-bit random salt with a cost factor of $2^{12} = 4096$ key expansion iterations.</li>
+<li><code>bcrypt.hashpw(...)</code>: Produces a modular crypt string (e.g., <code>$2b$12$...</code>) containing the algorithm identifier, cost factor, salt, and hash.</li>
+<li><code>bcrypt.checkpw(...)</code>: Computes the candidate hash using the salt extracted from <code>hashed_password</code> and checks equivalence in constant time.</li>
+</ul>
+<pre><code class="language-python"># Line 118-153 of security.py
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+    db = Depends(get_db)
+) -&gt; Dict[str, Any]:
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    
+    user_id = payload.get("userId") or payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token payload is missing user identification.",
+        )
+
+    user = await db["users"].find_one({"id": str(user_id)})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account associated with this token no longer exists.",
+        )
+
+    if not user.get("isActive", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is deactivated.",
+        )
+
+    user.pop("_id", None)
+    return user</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>Depends(oauth2_scheme)</code>: Extracts the <code>Authorization: Bearer &lt;token&gt;</code> string from inbound HTTP request headers.</li>
+<li><code>decode_access_token(token)</code>: Validates signature and expiration timestamp (<code>exp</code>).</li>
+<li><code>db["users"].find_one({"id": str(user_id)})</code>: Hydrates the full, fresh user profile from MongoDB on every authenticated request. This guarantees that if a user is deleted or deactivated, their existing JWT is rejected immediately.</li>
+<li><code>user.pop("_id", None)</code>: Deletes MongoDB's BSON <code>_id</code> to prevent JSON serialization errors.</li>
+</ul>
+<hr />
+<h3>3.7 <code>pms_backend/api/routers/v1_auth.py</code></h3>
+<ul>
+<li><strong>Path</strong>: <code>c:\Users\User\Desktop\pmsauth\pms_backend\api\routers\v1_auth.py</code></li>
+<li><strong>Responsibility</strong>: Authentication endpoints for workspace signup, OTP verification, login, profile introspection (<code>/me</code>), and logout.</li>
+</ul>
+<pre><code class="language-python"># Line 291-340 of v1_auth.py
+@router.post("/login", status_code=status.HTTP_200_OK)
+async def login(payload: LoginRequest, db = Depends(get_db)):
+    clean_email = payload.email.strip().lower()
+    user = await db["users"].find_one({"email": clean_email})
+
+    if not user or not verify_password(payload.password, user.get("passwordHash", "")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not user.get("isVerified", False):
+        raise HTTPException(status_code=403, detail="Account not verified.")
+
+    if not user.get("isActive", True):
+        raise HTTPException(status_code=403, detail="Your account has been deactivated.")
+
+    org_id = user.get("organizationId")
+    normalized_user_role = normalize_role(user.get("role", "employee"))
+
+    token_payload = {
+        "userId": user["id"],
+        "organizationId": org_id or "",
+        "role": normalized_user_role,
+        "email": user["email"],
+        "name": user.get("name", "")
+    }
+    access_token = create_access_token(data=token_payload)
+
+    return {
+        "accessToken": access_token,
+        "tokenType": "bearer",
+        "user": { ... }
+    }</code></pre>
+<p><em>Line-by-Line Breakdown</em>:</p>
+<ul>
+<li><code>clean_email</code>: Normalizes email to prevent case-sensitivity login failures (e.g. <code>User@Waymark.com</code> vs <code>user@waymark.com</code>).</li>
+<li><code>verify_password(...)</code>: Validates credentials against stored Bcrypt hash.</li>
+<li><code>token_payload</code>: Encodes tenant context (<code>organizationId</code>) and role claims (<code>role</code>) directly into the cryptographically signed JWT.</li>
+</ul>
+<hr />
+<h2>Phase 4: Core Engineering Concepts Illustrated by Real Code</h2>
+<h3>4.1 Frontend vs Backend</h3>
+<ul>
+<li><strong>Concept</strong>: The <strong>frontend</strong> runs on the client device (inside Google Chrome, Safari, etc.) and controls user interactions, animations, and DOM rendering. The <strong>backend</strong> runs on a remote or local web server, controlling database transactions, cryptographic operations, and core business rules.</li>
+<li><strong>In Your Code</strong>:</li>
+<li>Frontend: <code>pms_frontend/src/pages/Login.jsx</code> executes inside the user's browser, compiling JSX into interactive HTML/CSS elements.</li>
+<li>Backend: <code>pms_backend/api/routers/v1_auth.py</code> executes on the server runtime, directly accessing the local file system and MongoDB socket.</li>
+</ul>
+<h3>4.2 Client-Server Architecture</h3>
+<ul>
+<li><strong>Concept</strong>: A distributed computing topology separating resource requesters (Clients) from centralized service providers (Servers). Communication occurs over standard network protocols.</li>
+<li><strong>In Your Code</strong>: The React client runs on <code>http://localhost:5173</code>. The FastAPI server runs on <code>http://127.0.0.1:8000</code>. They operate as independent operating system processes communicating via TCP network sockets.</li>
+</ul>
+<h3>4.3 HTTP Requests and Responses</h3>
+<ul>
+<li><strong>Concept</strong>: The stateless application-level protocol governing the web. The client issues an <strong>HTTP Request</strong> specifying a method and resource path; the server replies with an <strong>HTTP Response</strong> containing a status code and body.</li>
+<li><strong>In Your Code</strong>: <code>apiCall()</code> in <code>pms_frontend/src/services/api.js</code> constructs an HTTP Request:</li>
+</ul>
+<pre><code class="language-http">  POST /api/v1/auth/login HTTP/1.1
+  Host: localhost:5173
+  Content-Type: application/json
+
+  {"email":"admin@waymark.com","password":"Password123!"}</code></pre>
+<p>  FastAPI returns an HTTP Response:</p>
+<pre><code class="language-http">  HTTP/1.1 200 OK
+  Content-Type: application/json
+
+  {"accessToken":"eyJhbGci...","tokenType":"bearer","user":{...}}</code></pre>
+<h3>4.4 API Endpoints and REST APIs</h3>
+<ul>
+<li><strong>Concept</strong>: An API endpoint is a specific URI where a service can be accessed by client software. REST (Representational State Transfer) organizes endpoints by resource nouns, utilizing standard HTTP verbs.</li>
+<li><strong>In Your Code</strong>: In <code>pms_backend/api/routers/v1_auth.py</code>, <code>@router.post("/login")</code> defines the endpoint <code>/api/v1/auth/login</code>.</li>
+</ul>
+<h3>4.5 GET vs POST Requests</h3>
+<ul>
+<li><strong>Concept</strong>: <strong>GET</strong> retrieves data without modifying server state (idempotent and safe). <strong>POST</strong> submits data to the server to create a resource or execute state transitions, carrying data inside the request body.</li>
+<li><strong>In Your Code</strong>:</li>
+<li><code>POST /api/v1/auth/login</code>: Uses POST because plaintext credentials must be transmitted securely in the encrypted payload body, rather than exposed in query string URL logs.</li>
+<li><code>GET /api/v1/auth/me</code>: Uses GET because it purely retrieves the currently logged-in user's profile.</li>
+</ul>
+<h3>4.6 Request Bodies, Response Bodies, Headers, and Status Codes</h3>
+<ul>
+<li><strong>Concept</strong>:</li>
+<li><strong>Headers</strong>: Metadata key-value pairs (e.g., <code>Content-Type</code>, <code>Authorization</code>).</li>
+<li><strong>Body</strong>: The payload data transmitted.</li>
+<li><strong>Status Codes</strong>: 3-digit numerical response categories (2xx Success, 4xx Client Error, 5xx Server Error).</li>
+<li><strong>In Your Code</strong>:</li>
+<li>Status <code>200 OK</code>: Successful authentication in <code>v1_auth.py:291</code>.</li>
+<li>Status <code>401 Unauthorized</code>: Bad password in <code>v1_auth.py:305</code>.</li>
+<li>Status <code>403 Forbidden</code>: Unverified account in <code>v1_auth.py:311</code>.</li>
+<li>Header: <code>Authorization: Bearer eyJ...</code> attached in <code>api.js:22</code>.</li>
+</ul>
+<h3>4.7 JSON (JavaScript Object Notation)</h3>
+<ul>
+<li><strong>Concept</strong>: Lightweight data interchange format. Client-side objects are serialized into JSON strings, transmitted over the wire, and deserialized into native dictionaries/objects on the server.</li>
+<li><strong>In Your Code</strong>: <code>JSON.stringify(body)</code> in <code>pms_frontend/src/services/api.js:29</code> converts JavaScript objects to strings. Pydantic in <code>pms_backend/models/iam.py</code> deserializes the JSON string into Python objects.</li>
+</ul>
+<h3>4.8 Asynchronous Functions and <code>await</code></h3>
+<ul>
+<li><strong>Concept</strong>: Non-blocking concurrency. Instead of pausing execution while waiting for slow operations (network or disk I/O), the runtime yields the thread to handle other tasks until the I/O completes.</li>
+<li><strong>In Your Code</strong>: In <code>pms_backend/api/routers/v1_auth.py</code>, <code>await db["users"].find_one(...)</code> suspends execution of the <code>login()</code> coroutine until MongoDB returns data, allowing the Uvicorn server to process other HTTP requests in the interim.</li>
+</ul>
+<h3>4.9 Database Terminology (MongoDB)</h3>
+<ul>
+<li><strong>Database</strong>: A container for structured collections (<code>pms_db</code>).</li>
+<li><strong>Collection</strong>: Analogous to an SQL table (<code>users</code>, <code>organizations</code>, <code>projects</code>).</li>
+<li><strong>Document</strong>: Analogous to an SQL row; a flexible BSON/JSON object.</li>
+<li><strong>Field</strong>: Key-value attribute within a document (e.g., <code>"email": "admin@waymark.com"</code>).</li>
+<li><strong>Query</strong>: Search criteria (e.g., <code>find_one({"email": clean_email})</code>).</li>
+</ul>
+<h3>4.10 User Schemas and Data Validation</h3>
+<ul>
+<li><strong>Concept</strong>: Defining contracts for data shapes to prevent malformed or malicious inputs from entering the application.</li>
+<li><strong>In Your Code</strong>: <code>LoginRequest</code> in <code>pms_backend/models/iam.py</code> uses <code>EmailStr</code> from Pydantic. If an attacker passes <code>"email": "not-an-email"</code>, Pydantic rejects the request prior to database interaction.</li>
+</ul>
+<h3>4.11 Authentication vs Authorization</h3>
+<ul>
+<li><strong>Concept</strong>:</li>
+<li><strong>Authentication (AuthN)</strong>: Proving <em>who you are</em> (verifying password/JWT).</li>
+<li><strong>Authorization (AuthZ)</strong>: Determining <em>what you are allowed to do</em> (checking if your role has permission to access a resource).</li>
+<li><strong>In Your Code</strong>:</li>
+<li>AuthN: <code>verify_password()</code> in <code>v1_auth.py</code> validates identity.</li>
+<li>AuthZ: <code>require_role(["admin", "project_manager"])</code> in <code>pms_backend/core/security.py:205</code> determines if the caller has authority to execute actions.</li>
+</ul>
+<h3>4.12 Role-Based Access Control (RBAC)</h3>
+<ul>
+<li><strong>Concept</strong>: Restricting system access based on assigned organizational roles rather than individual user configurations.</li>
+<li><strong>In Your Code</strong>: Defined across <code>pms_backend/core/security.py</code> and <code>pms_backend/api/routers/v1_rbac.py</code>.</li>
+</ul>
+<h3>4.13 Password Storage and Verification</h3>
+<ul>
+<li><strong>Concept</strong>: Passwords must never be stored in plaintext. They are passed through a slow, cryptographically salted one-way hashing function (Bcrypt).</li>
+<li><strong>In Your Code</strong>: <code>hash_password()</code> and <code>verify_password()</code> in <code>pms_backend/core/security.py</code>.</li>
+</ul>
+<h3>4.14 Sessions, Cookies, Tokens, and JWTs</h3>
+<ul>
+<li><strong>WAYMARK Uses</strong>:</li>
+<li><strong>JWT (JSON Web Tokens)</strong>: Cryptographically signed tokens stored in <code>localStorage</code> and passed in the <code>Authorization: Bearer</code> header.</li>
+<li><strong>WAYMARK Does NOT Use</strong>:</li>
+<li><strong>Session Cookies</strong>: No <code>Set-Cookie</code> headers or cookie jars.</li>
+<li><strong>Server-Side Session Store</strong>: The backend does not maintain in-memory Redis session state.</li>
+</ul>
+<h3>4.15 Frontend State and Protected Routes</h3>
+<ul>
+<li><strong>Concept</strong>: Storing user information in React memory (<code>AuthContext</code>) and gating UI routing using route wrappers.</li>
+<li><strong>In Your Code</strong>: <code>&lt;ProtectedRoute&gt;</code> in <code>pms_frontend/src/context/AuthContext.jsx:233</code>.</li>
+</ul>
+<h3>4.16 Environment Variables and Secrets</h3>
+<ul>
+<li><strong>Concept</strong>: Extracting credentials and settings out of source code into <code>.env</code> files.</li>
+<li><strong>In Your Code</strong>: <code>MONGO_URI</code>, <code>DB_NAME</code>, and <code>JWT_SECRET</code> loaded via <code>python-dotenv</code> in <code>pms_backend/core/database.py</code>.</li>
+</ul>
+<h3>4.17 Error Handling and Debugging</h3>
+<ul>
+<li><strong>Concept</strong>: Gracefully capturing exceptions, logging diagnostics, and returning informative, secure messages to callers.</li>
+<li><strong>In Your Code</strong>: <code>try...except</code> blocks in <code>Login.jsx</code> and <code>HTTPException</code> raises in <code>v1_auth.py</code>.</li>
+</ul>
+<hr />
+<h2>Phase 5: Role-Based Access Control (RBAC) & Perimeter Analysis</h2>
+<h3>5.1 Role Architecture Matrix</h3>
+<table>
+<thead>
+<tr><th>Role Key</th><th>Canonical Database Value</th><th>Frontend Dashboard Component</th><th>Authorized Navigation Items</th><th>Admin Invisibility Status</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Administrator</strong></td><td><code>"admin"</code> / <code>"owner"</code></td><td><code>&lt;AdminDashboard /&gt;</code></td><td>Dashboard & Terminal Logs, Basic Settings, Advanced Settings</td><td>Visible to other Admins; invisible to Employees & Guests</td></tr>
+<tr><td><strong>Project Manager</strong></td><td><code>"project_manager"</code></td><td><code>&lt;ManagerDashboard /&gt;</code></td><td>Dashboard & Team Health, Workflow Pipelines, Projects, Tasks & Reviews</td><td>Fully visible across team rosters</td></tr>
+<tr><td><strong>Staff Employee</strong></td><td><code>"employee"</code></td><td><code>&lt;EmployeeDashboard /&gt;</code></td><td>Dashboard & Workload, My Task Workstation</td><td>Fully visible across team rosters</td></tr>
+</tbody>
+</table>
+<h3>5.2 Perimeter Defense: Backend vs Frontend Enforcement</h3>
+<p>A fundamental security principle in web engineering is: <strong>The client cannot be trusted.</strong></p>
+<pre><code class="language-">+-------------------------------------------------------------------------------+
+|                            FRONTEND UI PERIMETER                              |
+|                                                                               |
+|   Role checks in React:                                                       |
+|   - &lt;ProtectedRoute allowedRoles={['admin']}&gt;                                 |
+|   - DynamicDashboard: user.role === 'admin' ? &lt;AdminDashboard /&gt; : ...        |
+|   - Navbar.jsx: {isAdmin &amp;&amp; &lt;NavLink to="/advanced-settings" /&gt;}              |
+|                                                                               |
+|   *Status*: Cosmetic Security. Any user can open DevTools, modify             |
+|   localStorage.getItem('user'), set role to "admin", and render the screen.   |
++-------------------------------------------------------------------------------+
+                                        |
+                   Attacker bypasses UI | Dispatches direct curl / Postman request
+                                        v
++-------------------------------------------------------------------------------+
+|                             BACKEND API PERIMETER                             |
+|                                                                               |
+|   Endpoint Protection:                                                        |
+|   - v1_rbac.py: Depends(require_role(["admin", "owner"]))  [SECURE]           |
+|   - v1_projects.py: create_project(...) [NO ROLE CHECK]     [VULNERABLE]      |
++-------------------------------------------------------------------------------+</code></pre>
+<h4>Detailed Findings</h4>
+<ol>
+<li><strong>Frontend Restrictions Are Purely Cosmetic</strong>:</li>
+</ol>
+<p>   The conditional rendering in <code>Navbar.jsx</code> (<code>isAdmin &amp;&amp; ...</code>) and <code>App.jsx</code> (<code>DynamicDashboard</code>) prevents regular users from seeing controls in the browser. However, a malicious user can edit their <code>localStorage</code> user profile or issue direct API calls using their valid Employee JWT.</p>
+<ol>
+<li><strong>Backend Enforcement Discrepancies</strong>:</li>
+</ol>
+<ul>
+<li><strong>Enforced Endpoints</strong>: In <code>pms_backend/api/routers/v1_rbac.py</code>, administrative routes like <code>/roles</code> and <code>/assignments</code> use <code>Depends(require_role(["admin", "owner"]))</code>. If an employee sends a request, FastAPI verifies the token and returns HTTP 403 Forbidden.</li>
+<li><strong>Vulnerable Endpoints</strong>: In <code>pms_backend/api/routers/v1_projects.py:119</code>, <code>@router.post("/projects")</code> does not use <code>require_role</code>. An authenticated Employee can construct a POST request to <code>/api/v1/execution/projects</code> and create new projects, bypassing frontend restrictions.</li>
+</ul>
+<hr />
+<h2>Phase 6: Security and Architecture Audit</h2>
+<p>The following audit identifies security vulnerabilities, architectural gotchas, and production readiness gaps in the current implementation.</p>
+<h3>6.1 Vulnerability & Technical Debt Registry</h3>
+<pre><code class="language-">+----------+---------------------------------------------------------------------+---------------+
+| SEVERITY | ISSUE TITLE                                                         | BLOCKING?     |
++----------+---------------------------------------------------------------------+---------------+
+| HIGH     | Token Storage in localStorage (Vulnerable to XSS Exfiltration)       | Later         |
+| HIGH     | Missing Role Enforcement Dependencies on Project Creation Routes    | Later         |
+| MEDIUM   | Hardcoded Default JWT Secret Fallback                               | Pre-Prod      |
+| MEDIUM   | Duplicate Legacy Authentication Routers in v1_iam.py                | Later         |
+| LOW      | In-Memory Stateless Logout (JWT Not Blacklisted on Server)          | Later         |
+| LOW      | Demo Credential Autofill Retained in Production UI Code             | Pre-Prod      |
+| INFO     | MongoDB TTL Auto-Purge Mechanism Operating as Expected              | Non-Blocking  |
++----------+---------------------------------------------------------------------+---------------+</code></pre>
+<h4>Audit Item 1: Token Storage in <code>localStorage</code></h4>
+<ul>
+<li><strong>Severity</strong>: <strong>HIGH</strong></li>
+<li><strong>Evidence</strong>: <code>pms_frontend/src/context/AuthContext.jsx:136</code>:</li>
+</ul>
+<pre><code class="language-javascript">  localStorage.setItem('token', accessToken);</code></pre>
+<ul>
+<li><strong>Risk</strong>: Any third-party npm dependency or injected cross-site script (XSS) can read <code>window.localStorage</code> and exfiltrate JWT tokens to an external server.</li>
+<li><strong>Remediation</strong>: Transition authentication tokens to <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Strict</code> cookies issued by FastAPI via the <code>Set-Cookie</code> header. JavaScript cannot read <code>HttpOnly</code> cookies, preventing XSS token exfiltration.</li>
+<li><strong>Teammate Impact</strong>: Does not block local development.</li>
+</ul>
+<h4>Audit Item 2: Missing Role Enforcement Dependencies on Project Endpoints</h4>
+<ul>
+<li><strong>Severity</strong>: <strong>HIGH</strong></li>
+<li><strong>Evidence</strong>: <code>pms_backend/api/routers/v1_projects.py:119</code>:</li>
+</ul>
+<pre><code class="language-python">  @router.post("/projects", response_model=ProjectResponse, status_code=201)
+  async def create_project(payload: ProjectCreate, bg_tasks: BackgroundTasks, db = Depends(get_db)):</code></pre>
+<ul>
+<li><strong>Risk</strong>: Any authenticated user (including staff employees) can create projects by issuing direct API requests, violating the role boundary.</li>
+<li><strong>Remediation</strong>: Add <code>dependencies=[Depends(require_role(["admin", "project_manager"]))]</code> to the router decorator.</li>
+<li><strong>Teammate Impact</strong>: Does not block local development.</li>
+</ul>
+<h4>Audit Item 3: Hardcoded Default JWT Secret Fallback</h4>
+<ul>
+<li><strong>Severity</strong>: <strong>MEDIUM</strong></li>
+<li><strong>Evidence</strong>: <code>pms_backend/core/security.py:21</code>:</li>
+</ul>
+<pre><code class="language-python">  SECRET_KEY = os.getenv("JWT_SECRET", "waymark-enterprise-secure-jwt-secret-key-change-in-prod")</code></pre>
+<ul>
+<li><strong>Risk</strong>: If the <code>.env</code> file is missing in production, the application silently falls back to a publicly known secret key, enabling attackers to forge valid JWT tokens for any user ID and role.</li>
+<li><strong>Remediation</strong>: Raise an unrecoverable runtime exception on startup if <code>JWT_SECRET</code> is missing in non-development environments.</li>
+<li><strong>Teammate Impact</strong>: Addressed locally (updated <code>.env</code> with a secure 32+ byte key).</li>
+</ul>
+<h4>Audit Item 4: Duplicate Authentication Routers in <code>v1_iam.py</code></h4>
+<ul>
+<li><strong>Severity</strong>: <strong>MEDIUM</strong></li>
+<li><strong>Evidence</strong>: <code>pms_backend/api/routers/v1_iam.py:33</code> defines <code>/api/v1/iam/auth/signup</code> and <code>/api/v1/iam/auth/login</code>, while <code>pms_backend/api/routers/v1_auth.py:291</code> defines <code>/api/v1/auth/login</code>.</li>
+<li><strong>Risk</strong>: Confuses developers, increases maintenance burden, and introduces synchronization bugs if one route is updated while the other remains legacy.</li>
+<li><strong>Remediation</strong>: Deprecate and remove authentication routes from <code>v1_iam.py</code>, consolidating all identity logic inside <code>v1_auth.py</code>.</li>
+<li><strong>Teammate Impact</strong>: Does not block development.</li>
+</ul>
+<h4>Audit Item 5: Stateless JWT Logout</h4>
+<ul>
+<li><strong>Severity</strong>: <strong>LOW</strong></li>
+<li><strong>Evidence</strong>: <code>pms_backend/api/routers/v1_auth.py:392</code>:</li>
+</ul>
+<pre><code class="language-python">  @router.post("/logout", status_code=status.HTTP_200_OK)
+  async def logout(current_user: Dict[str, Any] = Depends(get_current_user)):
+      return {"message": "Successfully logged out. Please clear your client token."}</code></pre>
+<ul>
+<li><strong>Risk</strong>: When a user clicks "Logout", the client deletes the token from <code>localStorage</code>. However, if that token was copied or intercepted, it remains cryptographically valid on the backend until its 24-hour expiration (<code>exp</code>) elapses.</li>
+<li><strong>Remediation</strong>: Implement a Redis token blacklist (or MongoDB TTL collection) that tracks revoked JWT identifiers (<code>jti</code>) until their expiration.</li>
+<li><strong>Teammate Impact</strong>: Does not block local development.</li>
+</ul>
+<hr />
+<h2>Phase 7: Comprehensive Troubleshooting & Debugging Runbook</h2>
+<h3>Issue 1: "Failed to fetch" on Login Submission</h3>
+<ul>
+<li><strong>Symptom</strong>: Red error banner displaying <code>Failed to fetch</code>.</li>
+<li><strong>Root Cause</strong>:</li>
+</ul>
+<ol>
+<li>The FastAPI backend is offline.</li>
+<li>The Vite dev server reverse proxy is not running or misconfigured.</li>
+</ol>
+<ul>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Check if backend port 8000 is listening:</li>
+</ol>
+<pre><code class="language-powershell">     Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -eq 8000 }</code></pre>
+<ol>
+<li>If empty, start the unified dev server from the project root:</li>
+</ol>
+<pre><code class="language-powershell">     npm run dev</code></pre>
+<ol>
+<li>Verify that <code>pms_frontend/vite.config.js</code> contains the <code>/api</code> proxy target <code>http://127.0.0.1:8000</code>.</li>
+</ol>
+<h3>Issue 2: User Exists in Database but Login Fails with 401 Unauthorized</h3>
+<ul>
+<li><strong>Symptom</strong>: UI displays <code>Invalid email or password.</code></li>
+<li><strong>Root Cause</strong>:</li>
+</ul>
+<ol>
+<li>Password mismatch.</li>
+<li>Password hash in MongoDB was not generated via Bcrypt (e.g. inserted as plain text).</li>
+</ol>
+<ul>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Re-seed demo credentials with verified hashes:</li>
+</ol>
+<pre><code class="language-powershell">     node scripts/seed-demo-users.js</code></pre>
+<ol>
+<li>Verify credentials in MongoDB:</li>
+</ol>
+<ul>
+<li><code>admin@waymark.com</code> $\rightarrow$ <code>Password123!</code></li>
+<li><code>pm@waymark.com</code> $\rightarrow$ <code>Password123!</code></li>
+<li><code>employee@waymark.com</code> $\rightarrow$ <code>Password123!</code></li>
+</ul>
+<h3>Issue 3: Login Fails with 403 Forbidden ("Account not verified")</h3>
+<ul>
+<li><strong>Symptom</strong>: User enters correct password, but is redirected to OTP screen or receives a 403 error.</li>
+<li><strong>Root Cause</strong>: The user's document in <code>pms_db.users</code> has <code>"isVerified": false</code>.</li>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Open a terminal in <code>pms_backend</code>:</li>
+</ol>
+<pre><code class="language-powershell">     .\venv\Scripts\python.exe -c "import asyncio; from core.database import db; asyncio.run(db['users'].update_one({'email': 'admin@waymark.com'}, {'$set': {'isVerified': True}}))"</code></pre>
+<h3>Issue 4: Database Connection Fails (<code>ServerSelectionTimeoutError</code>)</h3>
+<ul>
+<li><strong>Symptom</strong>: Backend startup logs show MongoDB connection timeouts.</li>
+<li><strong>Root Cause</strong>: Local MongoDB Community Server is stopped.</li>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Check Windows MongoDB service:</li>
+</ol>
+<pre><code class="language-powershell">     Get-Service *mongo*</code></pre>
+<ol>
+<li>If Status is <code>Stopped</code>, start it:</li>
+</ol>
+<pre><code class="language-powershell">     Start-Service MongoDB</code></pre>
+<h3>Issue 5: Refreshing the Browser Logs the User Out</h3>
+<ul>
+<li><strong>Symptom</strong>: Navigating to <code>/dashboard</code> works after login, but pressing F5 / Refresh redirects to <code>/login</code>.</li>
+<li><strong>Root Cause</strong>: The token stored in <code>localStorage</code> failed verification during <code>verifySession()</code> in <code>AuthContext.jsx:77</code> (<code>GET /api/v1/auth/me</code>).</li>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Open Browser DevTools (F12) $\rightarrow$ Application $\rightarrow$ Local Storage.</li>
+<li>Verify that <code>token</code> contains a valid string starting with <code>eyJ</code>.</li>
+<li>Check the Network tab for the <code>/api/v1/auth/me</code> request. If it returns 401, check the backend logs for <code>InsecureKeyLengthWarning</code> or mismatched <code>JWT_SECRET</code>.</li>
+</ol>
+<h3>Issue 6: Wrong Dashboard Renders After Login</h3>
+<ul>
+<li><strong>Symptom</strong>: Admin logs in, but Employee Dashboard renders.</li>
+<li><strong>Root Cause</strong>: Unrecognized role string stored in database (e.g. <code>"Administrator"</code> instead of canonical <code>"admin"</code>), causing <code>DynamicDashboard</code> to fall back to the default Employee branch.</li>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Verify role normalization in <code>pms_frontend/src/context/AuthContext.jsx:31</code>:</li>
+</ol>
+<p>     <code>normalizeRoleName()</code> handles <code>'admin'</code>, <code>'project_manager'</code>, and <code>'employee'</code>.</p>
+<ol>
+<li>Inspect user record in MongoDB:</li>
+</ol>
+<pre><code class="language-powershell">     .\venv\Scripts\python.exe -c "import asyncio; from core.database import db; print(asyncio.run(db['users'].find_one({'email': 'admin@waymark.com'}, {'role': 1})))"</code></pre>
+<h3>Issue 7: Teammate Cannot Run the System Locally</h3>
+<ul>
+<li><strong>Symptom</strong>: Teammate clones the repo, runs <code>npm run dev</code>, and experiences missing package errors.</li>
+<li><strong>Step-by-Step Resolution</strong>:</li>
+</ul>
+<ol>
+<li>Ensure Python 3.10+ and Node.js 18+ are installed.</li>
+<li>Create backend venv and install requirements:</li>
+</ol>
+<pre><code class="language-powershell">     cd pms_backend
+     python -m venv venv
+     .\venv\Scripts\pip install -r requirements.txt
+     cd ..</code></pre>
+<ol>
+<li>Install frontend node modules:</li>
+</ol>
+<pre><code class="language-powershell">     cd pms_frontend
+     npm install
+     cd ..</code></pre>
+<ol>
+<li>Seed demo users:</li>
+</ol>
+<pre><code class="language-powershell">     node scripts/seed-demo-users.js</code></pre>
+<ol>
+<li>Start the platform:</li>
+</ol>
+<pre><code class="language-powershell">     npm run dev</code></pre>
+<hr />
+<h2>Phase 8: Student & Junior Engineer Learning Companion</h2>
+<h3>8.1 Architecture Cheat Sheet (One-Page Summary)</h3>
+<pre><code class="language-">========================================================================================
+                              WAYMARK PMS ARCHITECTURE AT A GLANCE
+========================================================================================
+
+1. CLIENT ENTRY       : React 19 + React Router v7 on port 5173.
+2. REVERSE PROXY      : Vite dev server forwards all /api requests to http://127.0.0.1:8000.
+3. BACKEND CORE       : FastAPI running on Uvicorn with async Motor MongoDB driver.
+4. CREDENTIAL STORAGE : Email + salted Bcrypt hash ($2b$12$) stored in pms_db.users.
+5. AUTH MECHANISM     : Stateless signed JSON Web Tokens (HS256) with 24-hour expiration.
+6. CLIENT STATE       : Token and normalized user saved in localStorage &amp; React Context.
+7. ROUTE GATING       : &lt;ProtectedRoute&gt; evaluates token existence.
+8. DASHBOARD ROUTING  : &lt;DynamicDashboard&gt; checks user.role -&gt; Admin / PM / Employee view.
+9. DATA PERSISTENCE   : Session survives page refresh via GET /api/v1/auth/me hydration.
+10. DATABASE TTL      : System terminal logs auto-delete after 24h via MongoDB TTL index.
+========================================================================================</code></pre>
+<h3>8.2 Technical Glossary (20 Essential Terms)</h3>
+<ol>
+<li><strong>ASGI (Asynchronous Server Gateway Interface)</strong>: The modern Python standard interface between async web servers (Uvicorn) and web frameworks (FastAPI).</li>
+<li><strong>Bcrypt</strong>: A password-hashing function based on the Blowfish cipher incorporating a salt and cost factor to resist brute-force hardware attacks.</li>
+<li><strong>CORS (Cross-Origin Resource Sharing)</strong>: Browser security policy restricting cross-domain HTTP requests unless explicitly permitted by response headers.</li>
+<li><strong>Hydration</strong>: The process of taking a minimal data pointer (e.g. <code>userId</code> from a JWT) and querying the database to populate the full in-memory data object.</li>
+<li><strong>JWT (JSON Web Token)</strong>: Compact, URL-safe format for cryptographically transmitting claims between parties composed of Header, Payload, and Signature.</li>
+<li><strong>Motor</strong>: An asynchronous, non-blocking Python coroutine driver for MongoDB built on PyMongo and Tornado/AsyncIO.</li>
+<li><strong>Pydantic</strong>: A data parsing and validation library for Python using standard type annotations to enforce schema contracts.</li>
+<li><strong>RBAC (Role-Based Access Control)</strong>: An authorization model determining access privileges according to assigned operational roles.</li>
+<li><strong>Reverse Proxy</strong>: A server intermediary taking client requests and routing them to one or more internal backend servers.</li>
+<li><strong>Salt</strong>: Cryptographically random bits prepended to passwords prior to hashing to defeat precomputed rainbow table attacks.</li>
+<li><strong>Single Page Application (SPA)</strong>: A web application that loads a single HTML page and dynamically rewrites DOM elements without page reloads.</li>
+<li><strong>TTL (Time-To-Live) Index</strong>: MongoDB index feature that automatically purges documents after a specified number of seconds.</li>
+<li><strong>Uvicorn</strong>: High-performance lightning-fast ASGI server for Python based on <code>uvloop</code> and <code>httptools</code>.</li>
+<li><strong>Bearer Token</strong>: An HTTP authentication scheme where possession of the token grants access without further proof of identity.</li>
+<li><strong>Stateless</strong>: An architecture where the server does not store client session data across subsequent requests.</li>
+<li><strong>React Context</strong>: React API enabling state to be shared across the entire component tree without prop drilling.</li>
+<li><strong>Middleware</strong>: Code executed in the pipeline between receiving an HTTP request and returning an HTTP response.</li>
+<li><strong>HMAC (Hash-based Message Authentication Code)</strong>: Cryptographic signature algorithm verifying data integrity and authenticity using a shared secret.</li>
+<li><strong>Idempotence</strong>: Property of an API operation where making multiple identical requests has the same effect as making a single request (e.g. GET, PUT).</li>
+<li><strong>Multi-Tenancy</strong>: Software architecture where a single running instance serves multiple independent client organizations (tenants).</li>
+</ol>
+<h3>8.3 Self-Assessment Checklist Before Modifying Auth Code</h3>
+<p>Before editing <code>v1_auth.py</code>, <code>security.py</code>, or <code>AuthContext.jsx</code>, confirm you can answer:</p>
+<ul>
+<li>[ ] Do I know where the <code>SECRET_KEY</code> is loaded from, and is it at least 32 bytes long?</li>
+<li>[ ] Am I verifying user permissions on the FastAPI backend or merely hiding buttons in React?</li>
+<li>[ ] If I add a new role, have I added it to <code>ROLE_MAPPINGS</code> in <code>core/security.py</code> and <code>normalizeRoleName</code> in <code>AuthContext.jsx</code>?</li>
+<li>[ ] Am I sanitizing <code>_id</code> before returning MongoDB documents to prevent JSON serialization errors?</li>
+<li>[ ] Does my new endpoint use <code>Depends(get_current_user)</code> or <code>Depends(require_role(...))</code>?</li>
+<li>[ ] Have I tested both valid credentials and invalid credentials to ensure error messages don't leak information?</li>
+</ul>
+<h3>8.4 Five Practical Code Exercises</h3>
+<h4>Exercise 1: Implement an Expiration Warning in Frontend</h4>
+<ul>
+<li><strong>Task</strong>: Inspect the expiration time <code>exp</code> inside the JWT token stored in <code>localStorage</code> and display a toast alert if less than 15 minutes remain in the session.</li>
+<li><strong>Hint</strong>: JWT payloads are base64-encoded. Use <code>JSON.parse(atob(token.split('.')[1]))</code> to extract <code>exp</code>.</li>
+</ul>
+<h4>Exercise 2: Secure the Project Creation Route on Backend</h4>
+<ul>
+<li><strong>Task</strong>: Restrict <code>POST /api/v1/execution/projects</code> in <code>pms_backend/api/routers/v1_projects.py</code> so only Administrators and Project Managers can create projects.</li>
+<li><strong>Hint</strong>: Import <code>require_role</code> from <code>core.security</code> and add <code>dependencies=[Depends(require_role(["admin", "project_manager"]))]</code> to <code>@router.post("/projects")</code>.</li>
+</ul>
+<h4>Exercise 3: Add Account Lockout After 5 Failed Login Attempts</h4>
+<ul>
+<li><strong>Task</strong>: Add a <code>failedLoginAttempts</code> counter to the user document in MongoDB. Increment on bad password. If counter reaches 5, set <code>isActive: false</code>.</li>
+<li><strong>Hint</strong>: Edit <code>login()</code> in <code>pms_backend/api/routers/v1_auth.py</code>.</li>
+</ul>
+<h4>Exercise 4: Add Password Complexity Validation</h4>
+<ul>
+<li><strong>Task</strong>: Update <code>SignupRequest</code> in <code>pms_backend/models/iam.py</code> using Pydantic's <code>@field_validator</code> to require at least one uppercase letter, one digit, and one special character.</li>
+<li><strong>Hint</strong>: Use Python's <code>re</code> module inside a validator function.</li>
+</ul>
+<h4>Exercise 5: Create a Role-Switcher Test Utility</h4>
+<ul>
+<li><strong>Task</strong>: Build a temporary developer modal that allows an Administrator to toggle their role between <code>admin</code>, <code>project_manager</code>, and <code>employee</code> in client state to preview dashboard layouts.</li>
+<li><strong>Hint</strong>: Leverage <code>updateUser({ role: newRole })</code> in <code>AuthContext.jsx</code>.</li>
+</ul>
+<h3>8.5 Ten Technical Viva & Interview Questions (With Model Answers)</h3>
+<h4>Q1: Why does WAYMARK use Bcrypt instead of SHA-256 for password hashing?</h4>
+<blockquote><strong>Answer</strong>: SHA-256 is designed to be computationally fast, making it susceptible to brute-force cracking using modern GPUs which can test billions of hashes per second. Bcrypt is deliberately computationally expensive and includes an adjustable work factor (salt rounds), forcing repeated memory and CPU expansions that make offline dictionary attacks computationally unfeasible.</blockquote>
+<h4>Q2: What is the purpose of the 128-bit salt in password hashing?</h4>
+<blockquote><strong>Answer</strong>: A salt ensures that two users with identical passwords will produce completely different hash strings. This defeats precomputed rainbow table attacks and prevents an attacker from knowing if multiple accounts share the same password.</blockquote>
+<h4>Q3: How does the application prevent cross-origin errors (CORS) during local development?</h4>
+<blockquote><strong>Answer</strong>: The Vite development server on port 5173 is configured with a reverse proxy in <code>vite.config.js</code>. Requests targeting <code>/api</code> are intercepted and forwarded internally to <code>http://127.0.0.1:8000</code>. Because the browser only communicates with its own origin (<code>localhost:5173</code>), CORS restrictions are bypassed.</blockquote>
+<h4>Q4: Why is storing JWTs in <code>localStorage</code> considered a security risk?</h4>
+<blockquote><strong>Answer</strong>: <code>localStorage</code> is accessible to any JavaScript code executing on the same origin. If the application has an XSS vulnerability (e.g. from an unescaped comment or a compromised npm package), malicious scripts can execute <code>localStorage.getItem('token')</code> and exfiltrate credentials. Using <code>HttpOnly</code> cookies mitigates this risk because they cannot be read via client-side JavaScript.</blockquote>
+<h4>Q5: What is the difference between <code>get_current_user</code> and <code>require_role</code> in FastAPI?</h4>
+<blockquote><strong>Answer</strong>: <code>get_current_user</code> is an authentication dependency; it validates the JWT signature and hydrates the user document from MongoDB to confirm identity. <code>require_role</code> is an authorization dependency factory; it wraps <code>get_current_user</code> and evaluates whether the authenticated user's role is included in the authorized role whitelist.</blockquote>
+<h4>Q6: Why does the login endpoint return a generic "Invalid email or password" error rather than distinguishing between missing emails and incorrect passwords?</h4>
+<blockquote><strong>Answer</strong>: Providing specific errors like "User not found" allows attackers to execute account enumeration attacks, compiling lists of valid registered email addresses. Returning a generic error prevents attackers from knowing whether the account exists.</blockquote>
+<h4>Q7: What is the difference between a stateful session and a stateless JWT?</h4>
+<blockquote><strong>Answer</strong>: In a stateful session, the server stores session data in memory or a database (e.g. Redis) and issues a session ID cookie. The server must check the store on every request. In a stateless JWT architecture, user identity and permissions are signed into the token itself. The server only validates the cryptographic signature without querying session tables, enabling horizontal scalability.</blockquote>
+<h4>Q8: What occurs if a non-admin user queries the staff directory?</h4>
+<blockquote><strong>Answer</strong>: <code>apply_admin_invisibility()</code> in <code>pms_backend/core/security.py</code> intercepts the database query and injects a filter condition <code>{"role": {"$nin": ["admin", "owner"]}}</code>. Administrator and Owner profiles are stripped from the result before returning data to the client.</blockquote>
+<h4>Q9: How does the application maintain user login status when the browser is refreshed?</h4>
+<blockquote><strong>Answer</strong>: During app initialization, <code>AuthProvider</code> reads the token from <code>localStorage</code> and immediately issues a background request to <code>GET /api/v1/auth/me</code>. FastAPI verifies the token and returns the current user profile. If valid, React state is hydrated; if invalid (e.g. expired), <code>localStorage</code> is cleared and the user is redirected to <code>/login</code>.</blockquote>
+<h4>Q10: How does MongoDB automatically delete terminal logs after 24 hours?</h4>
+<blockquote><strong>Answer</strong>: During startup in <code>pms_backend/core/database.py:init_db()</code>, a TTL index is created:</blockquote>
+<blockquote>```python</blockquote>
+<blockquote>await db.system_logs.create_index([("timestamp", 1)], expireAfterSeconds=86400)</blockquote>
+<blockquote>```</blockquote>
+<blockquote>MongoDB's background thread scans the index and deletes documents whose <code>timestamp</code> is older than 86,400 seconds (24 hours).</blockquote>
+<h3>8.6 Recommended Learning Progression Path</h3>
+<pre><code class="language-">Step 1: HTTP &amp; Web Fundamentals
+  ├── Master HTTP verbs (GET, POST, PUT, DELETE)
+  ├── Understand Headers, Status Codes (200, 401, 403, 404, 422)
+  └── Practice JSON serialization / deserialization
+
+Step 2: Cryptographic Basics
+  ├── Learn symmetric vs asymmetric encryption
+  ├── Understand one-way hashing vs encryption
+  └── Study how Bcrypt salts and work factors protect passwords
+
+Step 3: FastAPI &amp; Asynchronous Python
+  ├── Study Python type hints and Pydantic schemas
+  ├── Learn async / await concurrency and coroutines
+  └── Master FastAPI dependency injection (Depends)
+
+Step 4: React State &amp; Route Architecture
+  ├── Understand React Context and custom hooks (useAuth)
+  ├── Master client-side routing with React Router v7
+  └── Build Higher-Order Components for route protection
+
+Step 5: Full-Stack Security Hardening
+  ├── Replace localStorage with HttpOnly cookies
+  ├── Implement server-side JWT blacklisting with Redis
+  └── Enforce strict backend RBAC across every mutating route</code></pre>
+<hr />
+<h2>Task 2 Guidance: GitHub Fork, Push & Pull Request Workflow</h2>
+<p>You requested:</p>
+<blockquote><em>"create new github repo named pms inn my git hub commit and push the code base then i wanna push the changes to my friends repo from where i actually pulled the base code file so i wanna genrate a merge request can u do that? https://github.com/Arushi-Ojha/project_management_system"</em></blockquote>
+<h3>Understanding the Git/GitHub Collaboration Flow</h3>
+<p>When contributing changes back to a friend's or organization's repository, the standard engineering workflow is:</p>
+<pre><code class="language-">[Arushi-Ojha/project_management_system] (Upstream / Friend's Repo)
+                     ^
+                     | 4. Pull Request (Merge Request)
+                     |
+[Your GitHub Account: ugm8243/pms] (Origin / Your Personal Repo)
+                     ^
+                     | 3. git push myrepo feature/auth
+                     |
+[Your Local Machine: c:\Users\User\Desktop\pmsauth]
+   ├── 1. git add &amp; git commit
+   └── 2. git remote add myrepo https://github.com/ugm8243/pms.git</code></pre>
+<p>Because an automated agent does not possess your private GitHub password or Personal Access Token (and GitHub CLI <code>gh</code> is not installed on this machine), you should execute the following steps in your terminal.</p>
+<h3>Step-by-Step Instructions</h3>
+<h4>Step 1: Create the New Repository on GitHub</h4>
+<ol>
+<li>Open your browser and log into your GitHub account (<code>ugm8243</code>).</li>
+<li>Go to: <strong><a href="https://github.com/new">https://github.com/new</a></strong>.</li>
+<li>Repository name: enter <strong><code>pms</code></strong>.</li>
+<li>Set visibility to <strong>Public</strong> (or Private).</li>
+<li><strong>Important</strong>: Do <strong>NOT</strong> check "Add a README file", ".gitignore", or "license" (create an empty repository).</li>
+<li>Click <strong>Create repository</strong>.</li>
+</ol>
+<h4>Step 2: Stage & Commit Your Changes Locally</h4>
+<p>In your PowerShell terminal at <code>c:\Users\User\Desktop\pmsauth</code>:</p>
+<pre><code class="language-powershell"># 1. Check current status
+git status
+
+# 2. Stage all flattened codebase files, documentation, and scripts
+git add .
+
+# 3. Create a descriptive commit
+git commit -m "feat(auth): flatten workspace, configure dev proxy, and complete auth guide"</code></pre>
+<h4>Step 3: Add Your Personal GitHub Repo as a Remote and Push</h4>
+<pre><code class="language-powershell"># 1. Add your new personal GitHub repository as a new remote named 'myrepo'
+# (Replace ugm8243 with your exact GitHub username if different)
+git remote add myrepo https://github.com/ugm8243/pms.git
+
+# 2. Push your feature branch to your personal repository
+git push -u myrepo feature/auth</code></pre>
+<p><em>(Windows Credential Manager will prompt you once in your browser to sign in or authorize Git)</em>.</p>
+<h4>Step 4: Open a Pull Request to Your Friend's Repository</h4>
+<ol>
+<li>Navigate in your browser to your friend's repository:</li>
+</ol>
+<p>   <strong><a href="https://github.com/Arushi-Ojha/project_management_system">https://github.com/Arushi-Ojha/project_management_system</a></strong></p>
+<ol>
+<li>GitHub will automatically display a banner saying:  </li>
+</ol>
+<p>   <em>"feature/auth had recent pushes ... Compare & pull request"</em>.</p>
+<ol>
+<li>Click <strong>Compare & pull request</strong>.</li>
+<li>Set:</li>
+</ol>
+<ul>
+<li><strong>Base repository</strong>: <code>Arushi-Ojha/project_management_system</code> (base branch: <code>prod</code> or <code>main</code>)</li>
+<li><strong>Head repository</strong>: <code>ugm8243/pms</code> (compare branch: <code>feature/auth</code>)</li>
+</ul>
+<ol>
+<li>Title your Pull Request: <code>feat: Resolve authentication flow, add reverse proxy, and generate technical documentation</code>.</li>
+<li>Click <strong>Create pull request</strong>.</li>
+</ol>
+</body>
+</html>

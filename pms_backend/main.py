@@ -40,6 +40,7 @@ class SystemLogMiddleware(BaseHTTPMiddleware):
 
 # Import all Domain Routers
 from api.routers import (
+    v1_auth,
     v1_iam, 
     v1_config, 
     v1_projects, 
@@ -64,15 +65,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Configuration
+# CORS Configuration - Supports multi-port dev servers and production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
         "http://localhost:3000",
         "https://proman-aura-frontend-362935833196.asia-south1.run.app"
-    ], 
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,6 +88,7 @@ app.add_middleware(SystemLogMiddleware)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 # Register all routes to the main application
+app.include_router(v1_auth.router)
 app.include_router(v1_iam.router)
 app.include_router(v1_config.router)
 app.include_router(v1_projects.router)

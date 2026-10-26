@@ -172,7 +172,7 @@ cd project_management_system
 ## 📂 Project Structure
 
 ```text
-project_management_system/
+pmsauth/
 ├── pms_backend/
 │   ├── api/
 │   │   └── routers/

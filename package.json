@@ -1,0 +1,13 @@
+{
+  "name": "pms-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WAYMARK Project Management System Workspace",
+  "scripts": {
+    "dev": "npx --yes concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "node scripts/start-backend.js",
+    "dev:frontend": "npm --prefix pms_frontend run dev",
+    "seed": "node scripts/seed-demo-users.js",
+    "build": "npm --prefix pms_frontend run build"
+  }
+}

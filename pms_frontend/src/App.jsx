@@ -1,7 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth, ProtectedRoute } from './context/AuthContext';
 import Navbar from './components/Navbar';
 
+import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import AdminDashboard from './pages/AdminDashboard';
 import BasicSettings from './pages/BasicSettings';
@@ -15,16 +16,6 @@ import TasksHub from './pages/TasksHub';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import EmployeeTasks from './pages/EmployeeTasks';
 import Homepage from './pages/Homepage';
-
-// Protected Route Wrapper
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return children;
-};
 
 // Dynamic Role-based Dashboard Router
 const DynamicDashboard = () => {
@@ -68,7 +59,8 @@ function AppRoutes() {
           <Route path="/" element={<Homepage />} />
 
           {/* Public Auth */}
-          <Route path="/login" element={!user ? <Onboarding /> : <Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+          <Route path="/onboarding" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
 
           {/* Dynamic Unified Dashboard */}
           <Route path="/dashboard" element={<ProtectedRoute><DynamicDashboard /></ProtectedRoute>} />
